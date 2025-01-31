@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SGPA & CGPA Calculator</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background-color: #f4f4f9;
+      color: #333;
+    }
+    h1, h2 {
+      color: #4CAF50;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+    input, button {
+      margin: 5px;
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    button {
+      background-color: #4CAF50;
+      color: white;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 10px 0;
+    }
+    th, td {
+      padding: 10px;
+      border: 1px solid #ddd;
+      text-align: center;
+    }
+    th {
+      background-color: #f2f2f2;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>SGPA & CGPA Calculator</h1>
+
+    <!-- Step 1: Enter Number of Subjects -->
+    <div id="step1">
+      <h2>Step 1: Enter Number of Subjects</h2>
+      <label for="numSubjects">Number of Subjects:</label>
+      <input type="number" id="numSubjects" min="1" placeholder="Enter number of subjects">
+      <button onclick="generateSubjectTable()">Next</button>
+    </div>
+
+    <!-- Step 2: Enter Subject Details -->
+    <div id="step2" style="display: none;">
+      <h2>Step 2: Enter Subject Details</h2>
+      <table id="subjectTable">
+        <thead>
+          <tr>
+            <th>Subject</th>
+            <th>End Sem Marks</th>
+            <th>Mid Sem Marks</th>
+            <th>Teacher Assessment</th>
+            <th>Credits</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <button onclick="proceedToLabs()">Next</button>
+    </div>
+
+    <!-- Step 3: Enter Number of Labs -->
+    <div id="step3" style="display: none;">
+      <h2>Step 3: Enter Number of Labs</h2>
+      <label for="numLabs">Number of Labs:</label>
+      <input type="number" id="numLabs" min="0" placeholder="Enter number of labs">
+      <button onclick="generateLabTable()">Next</button>
+    </div>
+
+    <!-- Step 4: Enter Lab Details -->
+    <div id="step4" style="display: none;">
+      <h2>Step 4: Enter Lab Details</h2>
+      <table id="labTable">
+        <thead>
+          <tr>
+            <th>Lab</th>
+            <th>Total Marks</th>
+            <th>Credits</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <button onclick="calculateSGPA()">Calculate SGPA</button>
+    </div>
+
+    <!-- Step 5: Display SGPA and Proceed to CGPA -->
+    <div id="step5" style="display: none;">
+      <h2>Step 5: SGPA Calculation</h2>
+      <p id="sgpaResult"></p>
+      <button onclick="proceedToCGPA()">Calculate CGPA</button>
+    </div>
+
+    <!-- Step 6: Enter Previous Semester Details for CGPA -->
+    <div id="step6" style="display: none;">
+      <h2>Step 6: Enter Previous Semester Details</h2>
+      <label for="lastCGPA">Last CGPA:</label>
+      <input type="number" id="lastCGPA" step="0.01" placeholder="Enter last CGPA">
+      <label for="numSemesters">Number of Previous Semesters:</label>
+      <input type="number" id="numSemesters" min="0" placeholder="Enter number of semesters">
+      <div id="previousSGPAs"></div>
+      <button onclick="calculateCGPA()">Calculate CGPA</button>
+    </div>
+
+    <!-- Step 7: Display CGPA -->
+    <div id="step7" style="display: none;">
+      <h2>Step 7: CGPA Calculation</h2>
+      <p id="cgpaResult"></p>
+    </div>
+  </div>
+
+  <script>
+    let subjects = [];
+    let labs = [];
+    let currentSGPA = 0;
+
+    // Step 1: Generate Subject Table
+    function generateSubjectTable() {
+      const numSubjects = parseInt(document.getElementById('numSubjects').value);
+      if (numSubjects < 1) {
+        alert("Please enter a valid number of subjects.");
+        return;
+      }
+
+      const tableBody = document.querySelector("#subjectTable tbody");
+      tableBody.innerHTML = "";
+
+      for (let i = 1; i <= numSubjects; i++) {
+        const row = `<tr>
+          <td>Subject ${i}</td>
+          <td><input type="number" id="endSem${i}" placeholder="End Sem Marks"></td>
+          <td><input type="number" id="midSem${i}" placeholder="Mid Sem Marks"></td>
+          <td><input type="number" id="ta${i}" placeholder="Teacher Assessment"></td>
+          <td><input type="number" id="credits${i}" placeholder="Credits"></td>
+        </tr>`;
+        tableBody.innerHTML += row;
+      }
+
+      document.getElementById('step1').style.display = 'none';
+      document.getElementById('step2').style.display = 'block';
+    }
+
+    // Step 2: Proceed to Labs
+    function proceedToLabs() {
+      const numSubjects = parseInt(document.getElementById('numSubjects').value);
+      subjects = [];
+
+      for (let i = 1; i <= numSubjects; i++) {
+        const endSem = parseFloat(document.getElementById(`endSem${i}`).value) || 0;
+        const midSem = parseFloat(document.getElementById(`midSem${i}`).value) || 0;
+        const ta = parseFloat(document.getElementById(`ta${i}`).value) || 0;
+        const credits = parseFloat(document.getElementById(`credits${i}`).value) || 0;
+
+        if (credits <= 0) {
+          alert(`Please enter valid credits for Subject ${i}.`);
+          return;
+        }
+
+        const totalMarks = endSem + midSem + ta;
+        let grade = 0;
+
+        if (totalMarks >= 90) grade = 10;
+        else if (totalMarks >= 80) grade = 9;
+        else if (totalMarks >= 70) grade = 8;
+        else if (totalMarks >= 60) grade = 7;
+        else if (totalMarks >= 50) grade = 6;
+        else if (totalMarks >= 40) grade = 5;
+        else grade = 4;
+
+        const totalCredits = credits * grade;
+
+        subjects.push({ totalMarks, grade, credits, totalCredits });
+      }
+
+      document.getElementById('step2').style.display = 'none';
+      document.getElementById('step3').style.display = 'block';
+    }
+
+    // Step 3: Generate Lab Table
+    function generateLabTable() {
+      const numLabs = parseInt(document.getElementById('numLabs').value);
+      if (numLabs < 0) {
+        alert("Please enter a valid number of labs.");
+        return;
+      }
+
+      const tableBody = document.querySelector("#labTable tbody");
+      tableBody.innerHTML = "";
+
+      for (let i = 1; i <= numLabs; i++) {
+        const row = `<tr>
+          <td>Lab ${i}</td>
+          <td><input type="number" id="labMarks${i}" placeholder="Total Marks"></td>
+          <td><input type="number" id="labCredits${i}" placeholder="Credits"></td>
+        </tr>`;
+        tableBody.innerHTML += row;
+      }
+
+      document.getElementById('step3').style.display = 'none';
+      document.getElementById('step4').style.display = 'block';
+    }
+
+    // Step 4: Calculate SGPA
+    function calculateSGPA() {
+      const numLabs = parseInt(document.getElementById('numLabs').value);
+      labs = [];
+
+      for (let i = 1; i <= numLabs; i++) {
+        const labMarks = parseFloat(document.getElementById(`labMarks${i}`).value) || 0;
+        const labCredits = parseFloat(document.getElementById(`labCredits${i}`).value) || 0;
+
+        if (labCredits <= 0) {
+          alert(`Please enter valid credits for Lab ${i}.`);
+          return;
+        }
+
+        let grade = 0;
+
+        if (labMarks >= 90) grade = 10;
+        else if (labMarks >= 80) grade = 9;
+        else if (labMarks >= 70) grade = 8;
+        else if (labMarks >= 60) grade = 7;
+        else if (labMarks >= 50) grade = 6;
+        else if (labMarks >= 40) grade = 5;
+        else grade = 4;
+
+        const totalCredits = labCredits * grade;
+
+        labs.push({ labMarks, grade, credits: labCredits, totalCredits });
+      }
+
+      const totalSubjectCredits = subjects.reduce((sum, sub) => sum + sub.totalCredits, 0);
+      const totalLabCredits = labs.reduce((sum, lab) => sum + lab.totalCredits, 0);
+      const totalCredits = subjects.reduce((sum, sub) => sum + sub.credits, 0) + labs.reduce((sum, lab) => sum + lab.credits, 0);
+
+      currentSGPA = (totalSubjectCredits + totalLabCredits) / totalCredits;
+      document.getElementById('sgpaResult').innerText = `Your SGPA is: ${currentSGPA.toFixed(2)}`;
+      document.getElementById('step4').style.display = 'none';
+      document.getElementById('step5').style.display = 'block';
+    }
+
+    // Step 5: Proceed to CGPA
+    function proceedToCGPA() {
+      document.getElementById('step5').style.display = 'none';
+      document.getElementById('step6').style.display = 'block';
+    }
+
+    // Step 6: Calculate CGPA
+    function calculateCGPA() {
+      const lastCGPA = parseFloat(document.getElementById('lastCGPA').value) || 0;
+      const numSemesters = parseInt(document.getElementById('numSemesters').value) || 0;
+      const previousSGPAs = [];
+
+      for (let i = 1; i <= numSemesters; i++) {
+        const sgpa = parseFloat(prompt(`Enter SGPA for Semester ${i}:`)) || 0;
+        previousSGPAs.push(sgpa);
+      }
+
+      // Include current SGPA in the list of SGPAs
+      const allSGPAs = [...previousSGPAs, currentSGPA];
+      const averageSGPAs = allSGPAs.reduce((sum, sgpa) => sum + sgpa, 0) / allSGPAs.length;
+
+      // CGPA = Average of (Average of all SGPAs, Last CGPA)
+      const cgpa = (averageSGPAs + lastCGPA) / 2;
+
+      document.getElementById('cgpaResult').innerText = `Your CGPA is: ${cgpa.toFixed(2)}`;
+      document.getElementById('step6').style.display = 'none';
+      document.getElementById('step7').style.display = 'block';
+    }
+  </script>
+</body>
+</html>
