@@ -103,10 +103,16 @@
     .table-input {
         width: 100px;
     }
+    .mobile-warning {
+        display: none;
+        color: red;
+        font-weight: bold;
+        margin-bottom: 20px;
+    }
 </style>
 </head>
 <body>
-
+    <div class="mobile-warning" id="mobileWarning">Please use desktop mode for better visibility.</div>
         <!-- Step 1: Enter Number of Subjects -->
         <div id="step1">
             <h2>Step 1: Enter Number of Theory Subjects</h2>
@@ -180,7 +186,6 @@
             <h2>Step 7: CGPA Calculation</h2>
             <p id="cgpaResult"></p>
         </div>
-    </div>
 
     <script>
         let subjects = [];
@@ -263,7 +268,7 @@
             for (let i = 1; i <= numLabs; i++) {
                 const row = `<tr>
                     <td>Lab ${i}</td>
-                    <td><input type="number" class="table-input" id="labMarks${i}" placeholder="Total Marks" required></td>
+                    <td><input type="number" class="table-input" id="labMarks${i}" placeholder="Marks Obtained" required></td>
                     <td><input type="number" class="table-input" id="labCredits${i}" placeholder="Credits" required></td>
                 </tr>`;
                 tableBody.innerHTML += row;
@@ -340,6 +345,17 @@
             document.getElementById('step6').style.display = 'none';
             document.getElementById('step7').style.display = 'block';
         }
+
+        // Detect mobile device and show warning
+        function detectMobile() {
+            const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+            if (isMobile) {
+                document.getElementById('mobileWarning').style.display = 'block';
+            }
+        }
+
+        // Call detectMobile on page load
+        window.onload = detectMobile;
     </script>
 </body>
 </html>
